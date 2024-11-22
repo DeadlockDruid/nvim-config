@@ -8,8 +8,16 @@ return {
     '3rd/image.nvim', -- Uncomment this line if you need image preview support
   },
   cmd = 'Neotree', -- Lazy load NeoTree on this command
+  init = function()
+    -- Disable netrw at the very start
+    vim.g.loaded_netrw = 1
+    vim.g.loaded_netrwPlugin = 1
+  end,
   keys = {
     { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true }, -- Key mapping to reveal file in tree
+    { '<leader>ee', '<cmd>Neotree toggle<CR>', desc = 'Toggle NeoTree file explorer', silent = true },
+    { '<leader>ef', '<cmd>Neotree focus<CR>', desc = 'Focus NeoTree on current file', silent = true },
+    { '<leader>ec', '<cmd>Neotree close<CR>', desc = 'Close NeoTree file explorer', silent = true },
   },
   opts = {
     filesystem = {
@@ -19,6 +27,10 @@ return {
         },
       },
     },
+    close_if_last_window = false,
+    popup_border_style = 'rounded',
+    enable_git_status = true,
+    enable_diagnostics = true,
   },
   config = function()
     -- Ensure nvim-web-devicons is properly loaded and configured

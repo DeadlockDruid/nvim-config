@@ -67,7 +67,6 @@ return {
       rainbow = {
         enable = true,
         disable = { "html" }, -- Disable for HTML files
-        extended_mode = false, -- Do not highlight non-parentheses delimiters like tags
         max_file_lines = nil, -- No limit on file size for enabling rainbow
       },
     })

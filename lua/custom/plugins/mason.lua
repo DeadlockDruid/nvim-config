@@ -138,6 +138,15 @@ return {
       ensure_installed = vim.tbl_keys(servers), -- Automatically install listed servers
     })
 
+    -- Diagnostic settings
+    vim.diagnostic.config({
+      virtual_text = false, -- Disable inline diagnostics
+      signs = true,         -- Show signs in the gutter
+      underline = true,     -- Underline problematic text
+      update_in_insert = false, -- Disable diagnostics while typing
+      severity_sort = true, -- Sort diagnostics by severity
+    })
+
     -- Mason tool installer setup
     require("mason-tool-installer").setup({
       ensure_installed = {

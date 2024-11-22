@@ -1,35 +1,35 @@
 return {
   "nvim-telescope/telescope.nvim",
-  version = "*",  -- Always use the latest branch
+  branch = "0.1.x",
   dependencies = {
-    "nvim-lua/plenary.nvim",  -- Required dependency
-    { -- FZF native extension for faster fuzzy finding
-      "nvim-telescope/telescope-fzf-native.nvim",
-      build = "make",
-      cond = function()
-        return vim.fn.executable "make" == 1  -- Only load if `make` is available
-      end,
-    },
-    { "nvim-telescope/telescope-ui-select.nvim" },  -- For better UI select dropdowns
-    { -- Icons, recommended for better visuals
-      "nvim-tree/nvim-web-devicons", 
-      enabled = vim.g.have_nerd_font  -- Only load if Nerd Fonts are available
-    },
+    "nvim-lua/plenary.nvim",
+    { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+    "nvim-tree/nvim-web-devicons",
+    "folke/todo-comments.nvim",
   },
-  cmd = "Telescope",  -- Lazy load telescope with this command
-  event = "VimEnter", -- Load telescope on VimEnter event
   config = function()
-    -- Configure telescope and its extensions
     local telescope = require("telescope")
+    local actions = require("telescope.actions")
+    local transform_mod = require("telescope.actions.mt").transform_mod
+
+    local trouble = require("trouble")
+    local trouble_telescope = require("trouble.sources.telescope")
+
+    -- or create your custom action
+    local custom_actions = transform_mod({
+      open_trouble_qflist = function(prompt_bufnr)
+        trouble.toggle("quickfix")
+      end,
+    })
+
     telescope.setup({
       defaults = {
-        -- Add custom default key mappings or behavior here if needed
+        path_display = { "smart" },
         file_ignore_patterns = {
           "vendor/*",
           "public/packs",
           "dist/*",
           "%.lock",
-          "__pycache__/*",
           "%.sqlite3",
           "%.ipynb",
           "node_modules/*",
@@ -80,57 +80,28 @@ return {
           "%.o",
           "%.d",
           "%.sql",
-        }
-      },
-      extensions = {
-        ["ui-select"] = {
-          require("telescope.themes").get_dropdown(),  -- Use dropdown for UI selections
+        },
+        mappings = {
+          i = {
+            ["<C-k>"] = actions.move_selection_previous, -- move to prev result
+            ["<C-j>"] = actions.move_selection_next, -- move to next result
+            ["<C-q>"] = actions.send_selected_to_qflist + custom_actions.open_trouble_qflist,
+            ["<C-t>"] = trouble_telescope.open,
+          },
         },
       },
     })
 
-    -- Load Telescope extensions if available
-    pcall(telescope.load_extension, "fzf")
-    pcall(telescope.load_extension, "ui-select")
+    telescope.load_extension("fzf")
 
-    -- Set key mappings for Telescope features
-    local builtin = require "telescope.builtin"
-    vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Fuzzy find files in cwd" })
-    vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "Live grep for strings in cwd" })
-    vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "List open buffers" })
-    vim.keymap.set("n", "<leader>fs", builtin.git_status, { desc = "Search in Git status" })
-    vim.keymap.set("n", "<leader>fc", builtin.git_commits, { desc = "Search Git commits" })
+    -- set keymaps
+    local keymap = vim.keymap -- for conciseness
 
-    -- More advanced keymaps and configurations
-    vim.keymap.set("n", "<leader>sh", builtin.help_tags, { desc = "[S]earch [H]elp" })
-    vim.keymap.set("n", "<leader>sk", builtin.keymaps, { desc = "[S]earch [K]eymaps" })
-    vim.keymap.set("n", "<leader>sf", builtin.find_files, { desc = "[S]earch [F]iles" })
-    vim.keymap.set("n", "<leader>ss", builtin.builtin, { desc = "[S]earch [S]elect Telescope" })
-    vim.keymap.set("n", "<leader>sw", builtin.grep_string, { desc = "[S]earch current [W]ord" })
-    vim.keymap.set("n", "<leader>sg", builtin.live_grep, { desc = "[S]earch by [G]rep" })
-    vim.keymap.set("n", "<leader>sd", builtin.diagnostics, { desc = "[S]earch [D]iagnostics" })
-    vim.keymap.set("n", "<leader>sr", builtin.resume, { desc = "[S]earch [R]esume" })
-    vim.keymap.set("n", "<leader>s.", builtin.oldfiles, { desc = "[S]earch Recent Files" })
-
-    -- Fuzzy search in the current buffer
-    vim.keymap.set("n", "<leader>/", function()
-      builtin.current_buffer_fuzzy_find(require("telescope.themes").get_dropdown({
-        winblend = 10,
-        previewer = false,
-      }))
-    end, { desc = "[/] Fuzzily search in current buffer" })
-
-    -- Search only in open files
-    vim.keymap.set("n", "<leader>s/", function()
-      builtin.live_grep {
-        grep_open_files = true,
-        prompt_title = "Live Grep in Open Files",
-      }
-    end, { desc = "[S]earch [/] in Open Files" })
-
-    -- Shortcut to search Neovim configuration files
-    vim.keymap.set("n", "<leader>sn", function()
-      builtin.find_files { cwd = vim.fn.stdpath("config") }
-    end, { desc = "[S]earch [N]eovim files" })
+    keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Fuzzy find files in cwd" })
+    keymap.set("n", "<leader>fr", "<cmd>Telescope oldfiles<cr>", { desc = "Fuzzy find recent files" })
+    keymap.set("n", "<leader>fs", "<cmd>Telescope live_grep<cr>", { desc = "Find string in cwd" })
+    keymap.set("n", "<leader>fc", "<cmd>Telescope grep_string<cr>", { desc = "Find string under cursor in cwd" })
+    keymap.set("n", "<leader>ft", "<cmd>TodoTelescope<cr>", { desc = "Find todos" })
+    keymap.set('n', '<leader>fh', "<cmd>Telescope help_tags<cr>", { desc = 'Telescope help tags' })
   end,
 }
