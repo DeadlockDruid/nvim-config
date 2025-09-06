@@ -1,202 +1,157 @@
 return {
-  -- Main LSP and Mason Configuration
-  "neovim/nvim-lspconfig",
+  'neovim/nvim-lspconfig',
   dependencies = {
-    -- Mason setup for managing LSP servers and tools
-    {
-      "williamboman/mason.nvim",
-      config = true, -- Automatically sets up Mason before dependents
-    },
-    "williamboman/mason-lspconfig.nvim", -- Integrates Mason with LSP config
-    "WhoIsSethDaniel/mason-tool-installer.nvim", -- Ensures tools are installed
-    "j-hui/fidget.nvim", -- LSP status updates
-    "hrsh7th/cmp-nvim-lsp", -- Adds LSP autocompletion for cmp
+    { 'williamboman/mason.nvim', config = true },
+    'williamboman/mason-lspconfig.nvim',
+    'WhoIsSethDaniel/mason-tool-installer.nvim',
+    'j-hui/fidget.nvim',
+    'hrsh7th/cmp-nvim-lsp',
   },
   config = function()
-    -- Helper functions to determine Ruby version
-    local function get_ruby_version()
-      local handle = io.popen("ruby -e 'puts RUBY_VERSION'")
-      local result = handle:read("*a")
-      handle:close()
-      return result:match("%d+%.%d+%.%d+") -- Extract version (e.g., "3.1.2")
-    end
+    local lspconfig = require 'lspconfig'
 
-    local function is_ruby_version_gte_3()
-      local version = get_ruby_version()
-      local major, minor = version:match("^(%d+)%.(%d+)")
-      return tonumber(major) >= 3
-    end
+    -- Capabilities (cmp)
+    local capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(),
+      require('cmp_nvim_lsp').default_capabilities())
 
-    -- LSP server capabilities
-    local capabilities = vim.tbl_deep_extend(
-      "force",
-      vim.lsp.protocol.make_client_capabilities(),
-      require("cmp_nvim_lsp").default_capabilities()
-    )
-
-    -- Setup installed LSP servers
+    -- LSP servers (lspconfig names)
     local servers = {
       lua_ls = {
         settings = {
           Lua = {
-            completion = {
-              callSnippet = "Replace",
+            completion = { callSnippet = 'Replace' },
+            diagnostics = { disable = { 'missing-fields' } },
+            runtime = { version = 'LuaJIT' },
+            workspace = {
+              checkThirdParty = false,
+              library = { vim.fn.expand '$VIMRUNTIME/lua', vim.fn.stdpath 'config' .. '/lua' },
             },
-            diagnostics = { disable = { "missing-fields" } },
+            telemetry = { enable = false },
           },
         },
       },
-      ts_ls = {
-        filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
-      },
+      ts_ls = {}, -- TypeScript/JavaScript
       cssls = {},
       html = {},
       jsonls = {},
-      tailwindcss = {},
-      pyright = {},
-      bashls = {
-        settings = {
-          bashIde = {
-            globPattern = "*@(.sh|.inc|.bash|.command)",
-          },
-        },
+      tailwindcss = {
+        filetypes = { 'html', 'css', 'scss', 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue', 'svelte' },
       },
+      pyright = {},
+      bashls = {},
       yamlls = {
         settings = {
           yaml = {
-            schemas = {
-              ["https://json.schemastore.org/github-workflow"] = ".github/workflows/*",
-              ["https://json.schemastore.org/kubernetes"] = "/*.k8s.yaml",
-              ["https://json.schemastore.org/prettierrc"] = ".prettierrc.yaml",
-            },
+            schemaStore = { enable = true, url = 'https://www.schemastore.org/api/json/catalog.json' },
             validate = true,
+            keyOrdering = false,
           },
         },
       },
-      prismals = {
-        settings = {
-          prisma = {
-            prismaFmtBinPath = "prisma-fmt",
-          },
-        },
+      prismals = {},
+      sqls = {}, -- matches Mason package 'sqls'
+      volar = {  -- Vue
+        filetypes = { 'vue', 'javascript', 'typescript', 'javascriptreact', 'typescriptreact' },
+        settings = { vue = { inlayHints = { enable = true } } },
       },
-      sqlls = {
-        settings = {
-          sql = {
-            connections = {
-              {
-                driver = "sqlite",
-                dataSourceName = "path/to/your/database.db",
-              },
-            },
-          },
-        },
+      solargraph = {}, -- Ruby
+      -- NEW: C/C++ and Go
+      clangd = {
+        -- You can tweak cmd flags if you need (indexing/speed). Defaults are fine for most.
+        -- cmd = { "clangd", "--background-index", "--clang-tidy" },
       },
-      volar = {
-        filetypes = { "vue" },
-      },
-      solargraph = {
+      gopls = {
         settings = {
-          solargraph = {
-            diagnostics = true,
-            formatting = false, -- Delegate formatting to RuboCop
+          gopls = {
+            analyses = { unusedparams = true, nilness = true, unusedwrite = true, shadow = true },
+            staticcheck = true,
+            gofumpt = true,
           },
         },
       },
     }
 
-    -- Add Ruby-specific configurations
-    -- if is_ruby_version_gte_3() then
-    --   require("lspconfig")["ruby-lsp"].setup({
-    --     cmd = { "ruby-lsp" },
-    --     filetypes = { "ruby" },
-    --     root_dir = require("lspconfig").util.root_pattern("Gemfile", ".git"),
-    --     capabilities = capabilities,
-    --     on_attach = function(client, bufnr)
-    --       -- Format on save
-    --       if client.server_capabilities.documentFormattingProvider then
-    --         vim.api.nvim_create_autocmd("BufWritePre", {
-    --           group = vim.api.nvim_create_augroup("LspFormatting", { clear = true }),
-    --           buffer = bufnr,
-    --           callback = function()
-    --             vim.lsp.buf.format()
-    --           end,
-    --         })
-    --       end
-    --     end,
-    --   })
-    -- else
-      
-    -- end
+    require('mason').setup()
 
-    -- Mason setup
-    require("mason").setup()
-
-    -- Mason LSP config setup
-    require("mason-lspconfig").setup({
+    -- mason-lspconfig (latest option name is automatic_installation)
+    require('mason-lspconfig').setup {
+      ensure_installed = vim.tbl_keys(servers),
       automatic_installation = true,
-      ensure_installed = vim.tbl_keys(servers), -- Automatically install listed servers
-    })
+    }
 
-    -- Diagnostic settings
-    vim.diagnostic.config({
-      virtual_text = false, -- Disable inline diagnostics
-      signs = true,         -- Show signs in the gutter
-      underline = true,     -- Underline problematic text
-      update_in_insert = false, -- Disable diagnostics while typing
-      severity_sort = true, -- Sort diagnostics by severity
-    })
-
-    -- Mason tool installer setup
-    require("mason-tool-installer").setup({
+    -- Tools (Mason package names)
+    require('mason-tool-installer').setup {
       ensure_installed = {
-        "prettier",
-        "stylua",
-        "isort",
-        "black",
-        "pylint",
-        "eslint_d",
-        "shfmt",
-        "shellcheck",
-        "sqlfluff",
-        "yaml-language-server",
-        "prisma-language-server",
-        "ts_ls",
-        "solargraph",
-        "volar",
-        "sqlls",
-        "prismals",
-        "yamlls",
-        "bashls",
-        "pyright",
-        "tailwindcss",
-        "jsonls",
-        "cssls",
-        "html",
-        "lua_ls",
+        -- LSPs
+        'lua-language-server',
+        'typescript-language-server',
+        'css-lsp',
+        'html-lsp',
+        'json-lsp',
+        'tailwindcss-language-server',
+        'pyright',
+        'bash-language-server',
+        'yaml-language-server',
+        'prisma-language-server',
+        'sqls',
+        'vue-language-server',
+        'solargraph',
+        'clangd', -- C/C++
+        'gopls',  -- Go
+        -- formatters / linters / extras
+        'prettier',
+        'stylua',
+        'isort',
+        'black',
+        'pylint',
+        'eslint_d',
+        'shfmt',
+        'shellcheck',
+        'sqlfluff',
+        'clang-format',  -- C/C++ formatter
+        'gofumpt',       -- Go formatter
+        'golines',       -- Go line-wrapping formatter
+        'golangci-lint', -- Go mega-linter
+        'delve',         -- Go debugger
       },
-    })
+      auto_update = true,
+      run_on_start = true,
+    }
 
-    -- Mason-LSPconfig handler to configure servers
-    require("mason-lspconfig").setup_handlers({
-      function(server_name)
-        local server = servers[server_name] or {}
-        require("lspconfig")[server_name].setup(vim.tbl_extend("force", {
-          capabilities = capabilities,
-          on_attach = function(client, bufnr)
-            -- Format on save
-            if client.server_capabilities.documentFormattingProvider then
-              vim.api.nvim_create_autocmd("BufWritePre", {
-                group = vim.api.nvim_create_augroup("LspFormatting", { clear = true }),
-                buffer = bufnr,
-                callback = function()
-                  vim.lsp.buf.format()
-                end,
-              })
-            end
+    pcall(function()
+      require('fidget').setup {}
+    end)
+
+    vim.diagnostic.config {
+      virtual_text = false,
+      signs = true,
+      underline = true,
+      update_in_insert = false,
+      severity_sort = true,
+      float = { border = 'rounded' },
+    }
+
+    local function on_attach(client, bufnr)
+      if vim.lsp.inlay_hint and client.server_capabilities.inlayHintProvider then
+        vim.lsp.inlay_hint(bufnr, true)
+      end
+      if client.server_capabilities.documentFormattingProvider then
+        local grp = vim.api.nvim_create_augroup('LspFormatting_' .. bufnr, { clear = true })
+        vim.api.nvim_create_autocmd('BufWritePre', {
+          group = grp,
+          buffer = bufnr,
+          callback = function()
+            vim.lsp.buf.format { bufnr = bufnr, timeout_ms = 3000 }
           end,
-        }, server))
-      end,
-    })
+        })
+      end
+    end
+
+    for name, cfg in pairs(servers) do
+      lspconfig[name].setup(vim.tbl_deep_extend('force', {
+        capabilities = capabilities,
+        on_attach = on_attach,
+      }, cfg))
+    end
   end,
 }
