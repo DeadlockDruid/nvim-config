@@ -11,8 +11,7 @@ return {
     local lspconfig = require 'lspconfig'
 
     -- Capabilities (cmp)
-    local capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(),
-      require('cmp_nvim_lsp').default_capabilities())
+    local capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), require('cmp_nvim_lsp').default_capabilities())
 
     -- LSP servers (lspconfig names)
     local servers = {
@@ -30,7 +29,7 @@ return {
           },
         },
       },
-      ts_ls = {}, -- TypeScript/JavaScript
+      ts_ls = {}, -- TypeScript/JavaScript (new name in lspconfig)
       cssls = {},
       html = {},
       jsonls = {},
@@ -50,14 +49,13 @@ return {
       },
       prismals = {},
       sqls = {}, -- matches Mason package 'sqls'
-      volar = {  -- Vue
+      volar = { -- Vue
         filetypes = { 'vue', 'javascript', 'typescript', 'javascriptreact', 'typescriptreact' },
         settings = { vue = { inlayHints = { enable = true } } },
       },
       solargraph = {}, -- Ruby
-      -- NEW: C/C++ and Go
+      -- C/C++ and Go
       clangd = {
-        -- You can tweak cmd flags if you need (indexing/speed). Defaults are fine for most.
         -- cmd = { "clangd", "--background-index", "--clang-tidy" },
       },
       gopls = {
@@ -71,9 +69,10 @@ return {
       },
     }
 
+    -- Mason core
     require('mason').setup()
 
-    -- mason-lspconfig (latest option name is automatic_installation)
+    -- mason-lspconfig (use automatic_installation for latest)
     require('mason-lspconfig').setup {
       ensure_installed = vim.tbl_keys(servers),
       automatic_installation = true,
@@ -97,7 +96,7 @@ return {
         'vue-language-server',
         'solargraph',
         'clangd', -- C/C++
-        'gopls',  -- Go
+        'gopls', -- Go
         -- formatters / linters / extras
         'prettier',
         'stylua',
@@ -108,20 +107,22 @@ return {
         'shfmt',
         'shellcheck',
         'sqlfluff',
-        'clang-format',  -- C/C++ formatter
-        'gofumpt',       -- Go formatter
-        'golines',       -- Go line-wrapping formatter
+        'clang-format', -- C/C++ formatter
+        'gofumpt', -- Go formatter
+        'golines', -- Go line-wrapping formatter
         'golangci-lint', -- Go mega-linter
-        'delve',         -- Go debugger
+        'delve', -- Go debugger
       },
       auto_update = true,
       run_on_start = true,
     }
 
+    -- Fidget (non-fatal if missing)
     pcall(function()
       require('fidget').setup {}
     end)
 
+    -- Diagnostics UI
     vim.diagnostic.config {
       virtual_text = false,
       signs = true,
@@ -131,11 +132,48 @@ return {
       float = { border = 'rounded' },
     }
 
-    local function on_attach(client, bufnr)
-      if vim.lsp.inlay_hint and client.server_capabilities.inlayHintProvider then
-        vim.lsp.inlay_hint(bufnr, true)
+    ------------------------------------------------------------------------
+    -- Cross-version inlay hints helper (fixes 0.10+ change)
+    ------------------------------------------------------------------------
+    local function enable_inlay_hints(bufnr, enable)
+      local ih = vim.lsp.inlay_hint
+      if type(ih) == 'function' then
+        -- Neovim <= 0.9: vim.lsp.inlay_hint(bufnr, true/false)
+        pcall(ih, bufnr, enable)
+        return
       end
-      if client.server_capabilities.documentFormattingProvider then
+      if type(ih) == 'table' then
+        -- Neovim 0.10+: vim.lsp.inlay_hint.enable(bufnr, true/false)
+        if type(ih.enable) == 'function' then
+          local ok = pcall(ih.enable, bufnr, enable)
+          if not ok then
+            pcall(ih.enable, enable, { bufnr = bufnr })
+          end
+        elseif type(ih.set) == 'function' then
+          pcall(ih.set, enable, { bufnr = bufnr })
+        end
+      end
+    end
+
+    -- Optional: toggle mapping for inlay hints
+    vim.keymap.set('n', '<leader>uh', function()
+      local ih = vim.lsp.inlay_hint
+      if type(ih) == 'table' and type(ih.is_enabled) == 'function' and type(ih.enable) == 'function' then
+        ih.enable(0, not ih.is_enabled(0))
+      elseif type(ih) == 'function' then
+        ih(0, true) -- 0.9 has no read API; just turn on
+      end
+    end, { desc = 'Toggle inlay hints' })
+
+    -- on_attach
+    local function on_attach(client, bufnr)
+      -- Inlay hints (guarded + cross-version)
+      if client and client.server_capabilities and client.server_capabilities.inlayHintProvider then
+        enable_inlay_hints(bufnr, true)
+      end
+
+      -- Format-on-save
+      if client and client.server_capabilities and client.server_capabilities.documentFormattingProvider then
         local grp = vim.api.nvim_create_augroup('LspFormatting_' .. bufnr, { clear = true })
         vim.api.nvim_create_autocmd('BufWritePre', {
           group = grp,
@@ -147,6 +185,7 @@ return {
       end
     end
 
+    -- Setup all servers
     for name, cfg in pairs(servers) do
       lspconfig[name].setup(vim.tbl_deep_extend('force', {
         capabilities = capabilities,
