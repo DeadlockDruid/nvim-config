@@ -1,72 +1,3 @@
--- return {
---   "hrsh7th/nvim-cmp",
---   event = "InsertEnter",
---   dependencies = {
---     "hrsh7th/cmp-buffer", -- source for text in buffer
---     "hrsh7th/cmp-path", -- source for file system paths
---     {
---       "L3MON4D3/LuaSnip",
---       -- follow latest release.
---       version = "v2.*", -- Replace <CurrentMajor> by the latest released major (first number of latest release)
---       -- install jsregexp (optional!).
---       build = "make install_jsregexp",
---     },
---     "saadparwaiz1/cmp_luasnip", -- for autocompletion
---     "rafamadriz/friendly-snippets", -- useful snippets
---     "onsails/lspkind.nvim", -- vs-code like pictograms
---   },
---   config = function()
---     local cmp = require("cmp")
---     local luasnip = require("luasnip")
---     local lspkind = require("lspkind")
---
---     -- loads vscode style snippets from installed plugins (e.g. friendly-snippets)
---     require("luasnip.loaders.from_vscode").lazy_load()
---
---     cmp.setup({
---       completion = {
---         completeopt = "menu,menuone,preview,noselect",
---       },
---       snippet = { -- configure how nvim-cmp interacts with snippet engine
---         expand = function(args)
---           luasnip.lsp_expand(args.body)
---         end,
---       },
---       mapping = cmp.mapping.preset.insert({
---         ["<C-k>"] = cmp.mapping.select_prev_item(), -- previous suggestion
---         ["<C-j>"] = cmp.mapping.select_next_item(), -- next suggestion
---         ["<C-b>"] = cmp.mapping.scroll_docs(-4),
---         ["<C-f>"] = cmp.mapping.scroll_docs(4),
---         ["<C-Space>"] = cmp.mapping.complete(), -- show completion suggestions
---         ["<C-e>"] = cmp.mapping.abort(), -- close completion window
---         ["<CR>"] = cmp.mapping.confirm({ select = false }),
---       }),
---       -- sources for autocompletion
---       sources = cmp.config.sources({
---         { name = "nvim_lsp" },
---         { name = "luasnip" }, -- snippets
---         { name = "buffer" }, -- text within current buffer
---         { name = "path" }, -- file system paths
---       }),
---
---       -- configure lspkind for vs-code like pictograms in completion menu
---       formatting = {
---         format = lspkind.cmp_format({
---           maxwidth = 50,
---           ellipsis_char = "...",
---         }),
---       },
---     })
---
---     -- Set completeopt options and highlight links (outside cmp.setup)
---     vim.cmd([[
---       set completeopt=menuone,noinsert,noselect
---       highlight! default link CmpItemKind CmpItemMenuDefault
---     ]])
---   end,
--- }
---
-
 return {
   'hrsh7th/nvim-cmp',
   event = 'InsertEnter',
@@ -93,31 +24,42 @@ return {
     -- Context-aware snippet expansion helper
     local has_words_before = function()
       local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-      return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match '%s' == nil
+      if col == 0 then return false end
+      local text = vim.api.nvim_buf_get_text(0, line - 1, col - 1, line - 1, col, {})[1]
+      return not text:match("%s")
     end
 
     -- Load friendly snippets
     require('luasnip.loaders.from_vscode').lazy_load()
 
+    require('luasnip').config.set_config({
+      history = true,
+      updateevents = "TextChanged,TextChangedI",
+    })
+
     cmp.setup {
       completion = {
-        completeopt = 'menu,menuone,preview,noselect',
+        completeopt = 'menu,menuone,noselect',
+        keyword_length = 2,
       },
       snippet = { -- configure how nvim-cmp interacts with snippet engine
         expand = function(args)
           luasnip.lsp_expand(args.body)
         end,
       },
-      mapping = cmp.mapping.preset.insert {
-        ['<C-k>'] = cmp.mapping.select_prev_item(), -- previous suggestion
-        ['<C-j>'] = cmp.mapping.select_next_item(), -- next suggestion
-        ['<C-b>'] = cmp.mapping.scroll_docs(-4), -- scroll documentation up
-        ['<C-f>'] = cmp.mapping.scroll_docs(4), -- scroll documentation down
-        ['<C-Space>'] = cmp.mapping.complete(), -- trigger completion menu
-        ['<C-e>'] = cmp.mapping.abort(), -- close completion window
-        ['<CR>'] = cmp.mapping.confirm { select = false }, -- confirm selection
+      mapping = cmp.mapping.preset.insert({
+        ['<C-k>'] = cmp.mapping.select_prev_item(),
+        ['<C-j>'] = cmp.mapping.select_next_item(),
+        ['<C-b>'] = cmp.mapping.scroll_docs(-4),
+        ['<C-f>'] = cmp.mapping.scroll_docs(4),
+        ['<C-Space>'] = cmp.mapping.complete(),
+        ['<C-e>'] = cmp.mapping.abort(),
+        ['<CR>'] = cmp.mapping.confirm({ select = false }),
+
         ['<Tab>'] = cmp.mapping(function(fallback)
-          if luasnip.expand_or_jumpable() then
+          if cmp.visible() then
+            cmp.select_next_item()
+          elseif luasnip.expand_or_jumpable() then
             luasnip.expand_or_jump()
           elseif has_words_before() then
             cmp.complete()
@@ -125,14 +67,17 @@ return {
             fallback()
           end
         end, { 'i', 's' }),
+
         ['<S-Tab>'] = cmp.mapping(function(fallback)
-          if luasnip.jumpable(-1) then
+          if cmp.visible() then
+            cmp.select_prev_item()
+          elseif luasnip.jumpable(-1) then
             luasnip.jump(-1)
           else
             fallback()
           end
         end, { 'i', 's' }),
-      },
+      }),
       sources = cmp.config.sources {
         { name = 'nvim_lsp' }, -- LSP completions
         { name = 'luasnip' }, -- Snippet completions
@@ -141,11 +86,18 @@ return {
         { name = 'nvim_lua' }, -- Neovim Lua API completions
       },
       formatting = {
-        format = lspkind.cmp_format {
-          mode = 'symbol_text', -- Show both text and symbol
-          maxwidth = 50, -- Limit completion width
-          ellipsis_char = '...', -- Show ellipsis for truncated items
-        },
+        format = lspkind.cmp_format({
+          mode = 'symbol_text',
+          maxwidth = 80,
+          ellipsis_char = '…',
+          menu = {
+            buffer   = '[Buf]',
+            nvim_lsp = '[LSP]',
+            path     = '[Path]',
+            luasnip  = '[Snip]',
+            nvim_lua = '[API]',
+          },
+        }),
       },
       window = {
         completion = cmp.config.window.bordered(),
@@ -159,10 +111,10 @@ return {
     -- Command-line completion setup
     cmp.setup.cmdline(':', {
       mapping = cmp.mapping.preset.cmdline(),
-      sources = {
-        { name = 'cmdline' },
-        { name = 'path' },
-      },
+      sources = cmp.config.sources(
+        { { name = 'path' } },
+        { { name = 'cmdline' } }
+      ),
     })
 
     -- Search completion setup
@@ -180,4 +132,3 @@ return {
     ]]
   end,
 }
-

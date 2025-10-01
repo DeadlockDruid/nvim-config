@@ -9,10 +9,15 @@ return {
   },
   config = function()
     -- Capabilities (cmp)
-    local capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), require('cmp_nvim_lsp').default_capabilities())
+    local capabilities = vim.tbl_deep_extend(
+      'force',
+      vim.lsp.protocol.make_client_capabilities(),
+      require('cmp_nvim_lsp').default_capabilities()
+    )
 
-    -- Global defaults
+    -- on_attach: inlay hints + (optional) format-on-save
     local function on_attach(client, bufnr)
+      -- Inlay hints (0.10/0.11 API compat)
       local ih = vim.lsp.inlay_hint
       if client.server_capabilities and client.server_capabilities.inlayHintProvider then
         if type(ih) == 'table' and type(ih.enable) == 'function' then
@@ -21,101 +26,171 @@ return {
           pcall(ih, bufnr, true)
         end
       end
-      if client.server_capabilities and client.server_capabilities.documentFormattingProvider then
-        local grp = vim.api.nvim_create_augroup('LspFormatting_' .. bufnr, { clear = true })
-        vim.api.nvim_create_autocmd('BufWritePre', {
-          group = grp,
-          buffer = bufnr,
-          callback = function()
-            vim.lsp.buf.format { bufnr = bufnr, timeout_ms = 3000 }
-          end,
-        })
+
+      -- If you prefer conform.nvim for on-save formatting, comment the block below
+      -- if client.server_capabilities and client.server_capabilities.documentFormattingProvider then
+      --   local grp = vim.api.nvim_create_augroup('LspFormatting_' .. bufnr, { clear = true })
+      --   vim.api.nvim_create_autocmd('BufWritePre', {
+      --     group = grp,
+      --     buffer = bufnr,
+      --     callback = function()
+      --       vim.lsp.buf.format { bufnr = bufnr, timeout_ms = 3000 }
+      --     end,
+      --   })
+      -- end
+    end
+
+    -- Mason core
+    require('mason').setup({
+      -- don't spam checking on open; use :Mason or installer to update on demand
+      ui = {
+        border = 'rounded',
+        check_outdated_packages_on_open = false,
+        width = 0.8,
+        height = 0.8,
+      },
+      log_level = vim.log.levels.WARN,
+      max_concurrent_installers = 4,
+      pip = { upgrade_pip = false }, -- faster startup; we manage pip ourselves
+    })
+
+    -- Filter ensure_installed to only servers mason-lspconfig knows about
+    local wanted_servers = {
+      'lua_ls', 'vtsls', 'cssls', 'html', 'jsonls', 'tailwindcss', 'pyright', 'bashls', 'yamlls', 'prismals', 'sqls', 'vue_ls', 'ruby_lsp', 'clangd', 'gopls',
+    }
+    local ok_map, map = pcall(function()
+      return require('mason-lspconfig.mappings.server').lspconfig_to_package
+    end)
+    local known_servers = ok_map and vim.tbl_filter(function(s)
+      return map[s] ~= nil
+    end, wanted_servers) or {}
+
+    if ok_map and #known_servers == 0 then
+      vim.schedule(function()
+        vim.notify('[mason-lspconfig] no known servers from your list; registry may be stale', vim.log.levels.DEBUG)
+      end)
+    end
+
+    -- Ensure LSP servers via mason-lspconfig (names must match lspconfig)
+    require('mason-lspconfig').setup {
+      ensure_installed = known_servers,
+      automatic_installation = false,
+    }
+
+    -- Per-server settings
+    local server_settings = {
+      lua_ls = {
+        settings = {
+          Lua = {
+            completion = { callSnippet = 'Replace' },
+            diagnostics = { disable = { 'missing-fields' } },
+            runtime = { version = 'LuaJIT' },
+            workspace = {
+              checkThirdParty = false,
+              library = { vim.fn.expand('$VIMRUNTIME/lua'), vim.fn.stdpath('config') .. '/lua' },
+            },
+            telemetry = { enable = false },
+          },
+        },
+      },
+
+      -- Modern TS/JS server
+      vtsls = {
+        settings = {
+          typescript = {
+            tsserver = { maxTsServerMemory = 3072 },
+            preferences = {
+              includeInlayParameterNameHints = 'all',
+              includeInlayVariableTypeHints = true,
+              includeCompletionsForModuleExports = true,
+            },
+          },
+          vtsls = { autoUseWorkspaceTsdk = true },
+        },
+      },
+
+      tailwindcss = {
+        filetypes = {
+          'html', 'css', 'scss', 'javascript', 'javascriptreact',
+          'typescript', 'typescriptreact', 'vue', 'svelte',
+        },
+      },
+
+      yamlls = {
+        settings = {
+          yaml = {
+            schemaStore = { enable = true, url = 'https://www.schemastore.org/api/json/catalog.json' },
+            validate = true,
+            keyOrdering = false,
+          },
+        },
+      },
+
+      gopls = {
+        settings = {
+          gopls = {
+            analyses = { unusedparams = true, nilness = true, unusedwrite = true, shadow = true },
+            staticcheck = true,
+            gofumpt = true,
+          },
+        },
+      },
+
+      -- Vue (volar). Let vtsls handle TS/JS; keep vue_ls only for .vue files
+      vue_ls = {
+        filetypes = { 'vue' },
+        settings = { vue = { hybridMode = true } },
+      },
+
+      ruby_lsp = {},
+      cssls = {},
+      html = {},
+      jsonls = {},
+      pyright = {},
+      bashls = {},
+      prismals = {},
+      sqls = {},
+      clangd = {},
+    }
+
+    -- Setup handlers (default + overrides) using Neovim 0.11 API
+    local mlsp = require('mason-lspconfig')
+
+    local function has_lspconfig(server)
+      local ok, configs = pcall(require, 'lspconfig.configs')
+      return ok and configs[server] ~= nil
+    end
+
+    local function setup_one(server)
+      local opts = server_settings[server] or {}
+      opts.capabilities = capabilities
+      opts.on_attach = on_attach
+
+      if has_lspconfig(server) then
+        -- Use new API (no lspconfig.setup calls → no deprecation warning)
+        vim.lsp.config(server, opts)
+        vim.lsp.enable(server)
+      else
+        vim.schedule(function()
+          vim.notify(("[mason-lspconfig] skipping unknown LSP server '%s'"):format(server), vim.log.levels.DEBUG)
+        end)
       end
     end
 
-    vim.lsp.config('*', {
-      capabilities = capabilities,
-      on_attach = on_attach,
-    })
+    if type(mlsp.setup_handlers) == "function" then
+      mlsp.setup_handlers({
+        function(server) setup_one(server) end,
+      })
+    else
+      for _, server in ipairs(mlsp.get_installed_servers()) do
+        setup_one(server)
+      end
+    end
 
-    -- Servers (NEW API names)
-    vim.lsp.config('lua_ls', {
-      settings = {
-        Lua = {
-          completion = { callSnippet = 'Replace' },
-          diagnostics = { disable = { 'missing-fields' } },
-          runtime = { version = 'LuaJIT' },
-          workspace = {
-            checkThirdParty = false,
-            library = { vim.fn.expand '$VIMRUNTIME/lua', vim.fn.stdpath 'config' .. '/lua' },
-          },
-          telemetry = { enable = false },
-        },
-      },
-    })
-
-    vim.lsp.config('ts_ls', {}) -- ✅ latest name
-    vim.lsp.config('cssls', {})
-    vim.lsp.config('html', {})
-    vim.lsp.config('jsonls', {})
-    vim.lsp.config('tailwindcss', {
-      filetypes = { 'html', 'css', 'scss', 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue', 'svelte' },
-    })
-    vim.lsp.config('pyright', {})
-    vim.lsp.config('bashls', {})
-    vim.lsp.config('yamlls', {
-      settings = {
-        yaml = {
-          schemaStore = { enable = true, url = 'https://www.schemastore.org/api/json/catalog.json' },
-          validate = true,
-          keyOrdering = false,
-        },
-      },
-    })
-    vim.lsp.config('prismals', {})
-    vim.lsp.config('sqls', {})
-    vim.lsp.config('vue_ls', {
-      filetypes = { 'vue', 'javascript', 'typescript', 'javascriptreact', 'typescriptreact' },
-      settings = {
-        vue = {
-          -- Enable take-over mode if you want vue_ls to handle TS/JS files too
-          takeoverMode = true,
-          -- Add any extra vue-specific settings here
-        },
-      },
-    })
-    vim.lsp.config('solargraph', {})
-    vim.lsp.config('clangd', {})
-    vim.lsp.config('gopls', {
-      settings = { gopls = { analyses = { unusedparams = true, nilness = true, unusedwrite = true, shadow = true }, staticcheck = true, gofumpt = true } },
-    })
-
-    -- Mason
-    require('mason').setup()
-
-    -- We don't need mason-lspconfig.ensure_installed at all.
-    require('mason-lspconfig').setup {} -- keep defaults; no ensure_installed list
-
-    -- Use mason-tool-installer for packages (by Mason package names)
+    -- Non-LSP tools via mason-tool-installer (formatters/linters/DAP/etc.)
     require('mason-tool-installer').setup {
       ensure_installed = {
-        -- LSP packages
-        'lua-language-server',
-        'typescript-language-server', -- ✅ installs TS; we still run ts_ls
-        'css-lsp',
-        'html-lsp',
-        'json-lsp',
-        'tailwindcss-language-server',
-        'pyright',
-        'bash-language-server',
-        'yaml-language-server',
-        'prisma-language-server',
-        'sqls',
-        'vue-language-server',
-        'solargraph',
-        'clangd',
-        'gopls',
-        -- formatters / linters / extras
+        -- formatters / linters / extras only (avoid duplicating LSP servers)
         'prettier',
         'stylua',
         'isort',
@@ -132,31 +207,26 @@ return {
         'delve',
       },
       auto_update = true,
-      run_on_start = true,
+      run_on_start = true,      -- still auto-run, but give UI some time
+      start_delay = 3000,       -- ms; avoids blocking startup
+      debounce_hours = 6,       -- don’t re-run more than ~daily
     }
 
-    -- Enable everything we configured (no name mapping headaches)
-    vim.lsp.enable {
-      'lua_ls',
-      'ts_ls',
-      'cssls',
-      'html',
-      'jsonls',
-      'tailwindcss',
-      'pyright',
-      'bashls',
-      'yamlls',
-      'prismals',
-      'sqls',
-      'vue_ls',
-      'solargraph',
-      'clangd',
-      'gopls',
-    }
-
-    -- Fidget (optional)
+    -- Fidget (LSP progress) → render with a small rounded window; messages still go through vim.notify (Snacks)
     pcall(function()
-      require('fidget').setup {}
+      require('fidget').setup({
+        progress = {
+          display = {
+            done_icon = "✔",
+            progress_icon = { pattern = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" }, period = 80 },
+            render_limit = 16,
+          },
+          ignore = { "null-ls" },
+        },
+        notification = {
+          window = { border = "rounded", winblend = 0, zindex = 60 },
+        },
+      })
     end)
 
     -- Diagnostics UI
@@ -169,7 +239,20 @@ return {
       float = { border = 'rounded' },
     }
 
-    -- Inlay hints toggle
+    -- Ensure all LSP messages use vim.notify (Snacks notifier)
+    vim.lsp.handlers["window/showMessage"] = function(_, result)
+      local lvl = ({ "ERROR", "WARN", "INFO", "DEBUG" })[result.type] or "INFO"
+      vim.notify(result.message, vim.log.levels[lvl])
+    end
+    vim.lsp.handlers["window/showMessageRequest"] = function(_, result)
+      local actions = {}
+      for i, action in ipairs(result.actions or {}) do
+        actions[i] = action.title
+      end
+      vim.notify(result.message, vim.log.levels.INFO, { title = "LSP", actions = actions })
+    end
+
+    -- Toggle inlay hints
     vim.keymap.set('n', '<leader>uh', function()
       local ih = vim.lsp.inlay_hint
       if type(ih) == 'table' and type(ih.is_enabled) == 'function' and type(ih.enable) == 'function' then

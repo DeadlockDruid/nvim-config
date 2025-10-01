@@ -7,6 +7,7 @@ map('n', '<leader>w', '<CMD>update<CR>')
 
 -- Quit
 map('n', '<leader>q', '<CMD>q<CR>')
+map('n', '<leader>Q', '<CMD>qa<CR>') -- quit all buffers/windows
 
 -- Exit insert mode
 map('i', 'jk', '<ESC>')

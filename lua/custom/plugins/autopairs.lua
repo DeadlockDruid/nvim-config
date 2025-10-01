@@ -13,8 +13,18 @@ return {
       check_ts = true, -- enable treesitter
       ts_config = {
         lua = { "string" }, -- don't add pairs in lua string treesitter nodes
-        javascript = { "template_string" }, -- don't add pairs in javscript template_string treesitter nodes
+        javascript = { "template_string" }, -- don't add pairs in javascript template_string treesitter nodes
         java = false, -- don't check treesitter on java
+      },
+      fast_wrap = {
+        map = '<M-e>', -- Alt+e keybinding to trigger fast wrap
+        chars = { '{', '[', '(', '"', "'" },
+        pattern = [=[[%'%"%>%]%)%}%,]]=],
+        end_key = '$',
+        keys = 'qwertyuiopzxcvbnmasdfghjkl',
+        check_comma = true,
+        highlight = 'Search',
+        highlight_grey = 'Comment',
       },
     })
 

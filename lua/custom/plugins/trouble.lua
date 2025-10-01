@@ -1,8 +1,10 @@
 return {
   "folke/trouble.nvim",
-  dependencies = { "nvim-tree/nvim-web-devicons", "folke/todo-comments.nvim" },
+  dependencies = {
+    "nvim-tree/nvim-web-devicons",
+    "folke/todo-comments.nvim",
+  },
   opts = {
-    focus = true,
     modes = {
       preview_float = {
         mode = "diagnostics",
@@ -13,7 +15,7 @@ return {
           title = "Preview",
           title_pos = "center",
           position = { 0, -2 },
-          size = { width = 0.3, height = 0.3 },
+          size = { width = 0.5, height = 0.4 }, -- bigger, easier to read
           zindex = 200,
         },
       },
@@ -21,11 +23,11 @@ return {
   },
   cmd = "Trouble",
   keys = {
-    { "<leader>xw", "<cmd>Trouble diagnostics toggle<CR>", desc = "Open trouble workspace diagnostics" },
-    { "<leader>xd", "<cmd>Trouble diagnostics toggle filter.buf=0<CR>", desc = "Open trouble document diagnostics" },
-    { "<leader>xq", "<cmd>Trouble quickfix toggle<CR>", desc = "Open trouble quickfix list" },
-    { "<leader>xl", "<cmd>Trouble loclist toggle<CR>", desc = "Open trouble location list" },
-    { "<leader>xt", "<cmd>Trouble todo toggle<CR>", desc = "Open todos in trouble" },
-    { "<leader>xf", "<cmd>Trouble preview_float toggle<CR>", desc = "Open Trouble floating diagnostics" },
+    { "<leader>xw", "<cmd>Trouble diagnostics toggle<CR>", desc = "Workspace diagnostics" },
+    { "<leader>xd", "<cmd>Trouble diagnostics toggle filter.buf=0<CR>", desc = "Document diagnostics" },
+    { "<leader>xq", "<cmd>Trouble quickfix toggle<CR>", desc = "Quickfix list" },
+    { "<leader>xl", "<cmd>Trouble loclist toggle<CR>", desc = "Location list" },
+    { "<leader>xt", "<cmd>Trouble todo toggle<CR>", desc = "TODOs in Trouble" },
+    { "<leader>xf", "<cmd>Trouble preview_float toggle<CR>", desc = "Floating diagnostics" },
   },
 }
