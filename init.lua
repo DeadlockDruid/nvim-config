@@ -9,15 +9,14 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Ensure correct session restore behavior
-vim.o.sessionoptions =
-  "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
+vim.o.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions'
 
 -- Point Neovim to the provider Python explicitly
-vim.g.python3_host_prog = vim.fn.expand("~/.pyenv/versions/neovim3/bin/python")
+vim.g.python3_host_prog = vim.fn.expand '~/.pyenv/versions/neovim3/bin/python'
 -- If you don't need these, disable to silence health warnings:
 -- vim.g.loaded_node_provider  = 0
-vim.g.loaded_ruby_provider  = 0
-vim.g.loaded_perl_provider  = 0
+vim.g.loaded_ruby_provider = 0
+vim.g.loaded_perl_provider = 0
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
@@ -83,12 +82,10 @@ vim.opt.cursorline = true
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
 
-
 -- Custom Settings
-require('custom.settings')
-require('custom.maps')
-require("custom.ui_enhancements")
-
+require 'custom.settings'
+require 'custom.maps'
+require 'custom.ui_enhancements'
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
@@ -886,11 +883,28 @@ require('lazy').setup({
   performance = {
     rtp = {
       disabled_plugins = {
-        'gzip', 'matchit', 'matchparen', 'tarPlugin', 'tohtml', 'tutor',
-        'zipPlugin', 'osc52', 'shada', 'spellfile', 'rplugin', 'archive',
-        'health', 'man', 'rrhelper', 'logiPat', 'remote_plugins',
+        'gzip',
+        'matchit',
+        'matchparen',
+        'tarPlugin',
+        'tohtml',
+        'tutor',
+        'zipPlugin',
+        'osc52',
+        'shada',
+        'spellfile',
+        'rplugin',
+        'archive',
+        'health',
+        'man',
+        'rrhelper',
+        'logiPat',
+        'remote_plugins',
         -- disable netrw* only if you don't use it
-        'netrw', 'netrwPlugin', 'netrwSettings', 'netrwFileHandlers',
+        'netrw',
+        'netrwPlugin',
+        'netrwSettings',
+        'netrwFileHandlers',
       },
     },
   },
@@ -898,3 +912,4 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+

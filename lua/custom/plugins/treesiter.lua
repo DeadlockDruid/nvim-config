@@ -5,7 +5,7 @@ return {
   build = ":TSUpdate",
   dependencies = {
     "windwp/nvim-ts-autotag",
-    "HiPhish/nvim-ts-rainbow2",  -- 🌈 rainbow brackets
+    "HiPhish/rainbow-delimiters.nvim",  -- 🌈 rainbow brackets
   },
   config = function()
     if vim.g._treesitter_loaded then
@@ -33,15 +33,6 @@ return {
         disable = { "ruby" },
       },
 
-      autotag = {
-        enable = true,
-      },
-
-      rainbow = {
-        enable = true,
-        query = 'rainbow-parens',
-        strategy = require('ts-rainbow').strategy.global,
-      },
 
       incremental_selection = {
         enable = true,
@@ -54,5 +45,34 @@ return {
       },
 
     })
+    require('nvim-ts-autotag').setup({
+      opts = {
+        enable_close = true,
+        enable_rename = true,
+        enable_close_on_slash = false,
+      },
+    })
+
+    -- Configure rainbow-delimiters per official docs
+    local rd = require('rainbow-delimiters')
+    vim.g.rainbow_delimiters = {
+      strategy = {
+        [''] = rd.strategy['global'],
+        vim  = rd.strategy['local'],
+      },
+      query = {
+        ['']  = 'rainbow-delimiters',
+        lua   = 'rainbow-blocks',
+      },
+      highlight = {
+        'RainbowDelimiterRed',
+        'RainbowDelimiterYellow',
+        'RainbowDelimiterBlue',
+        'RainbowDelimiterOrange',
+        'RainbowDelimiterGreen',
+        'RainbowDelimiterViolet',
+        'RainbowDelimiterCyan',
+      },
+    }
   end,
 }

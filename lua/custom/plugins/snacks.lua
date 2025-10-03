@@ -1,13 +1,13 @@
 return {
-  "folke/snacks.nvim",
-  lazy = false,               -- load immediately so ui.input/select are ready
-  priority = 1000,            -- make sure it loads early
+  'folke/snacks.nvim',
+  lazy = false, -- load immediately so ui.input/select are ready
+  priority = 1000, -- make sure it loads early
   opts = {
     -- 👇 Keep only what you need
     input = {
       enabled = true,
-      border = "rounded",
-      title_pos = "center",
+      border = 'rounded',
+      title_pos = 'center',
       win_options = { winblend = 0 },
     },
     bigfile = {
@@ -18,84 +18,90 @@ return {
     lazygit = {
       configure = true, -- auto-theme + nvim-remote integration
       config = {
-        os = { editPreset = "nvim-remote" },
+        os = { editPreset = 'nvim-remote' },
         gui = {
-          nerdFontsVersion = "3", -- you’re on a Nerd Font v3 setup
+          nerdFontsVersion = '3', -- you’re on a Nerd Font v3 setup
         },
       },
-      theme_path = vim.fs.normalize(vim.fn.stdpath("cache") .. "/lazygit-theme.yml"),
+      theme_path = vim.fs.normalize(vim.fn.stdpath 'cache' .. '/lazygit-theme.yml'),
       theme = {
         -- tweak a few highlight mappings; inherit the rest from your colorscheme
-        activeBorderColor          = { fg = "MatchParen", bold = true },
-        inactiveBorderColor        = { fg = "FloatBorder" },
-        selectedLineBgColor        = { bg = "Visual" }, -- set to 'default' to remove
-        optionsTextColor           = { fg = "Function" },
-        unstagedChangesColor       = { fg = "DiagnosticError" },
-        [241]                      = { fg = "Special" },
+        activeBorderColor = { fg = 'MatchParen', bold = true },
+        inactiveBorderColor = { fg = 'FloatBorder' },
+        selectedLineBgColor = { bg = 'Visual' }, -- set to 'default' to remove
+        optionsTextColor = { fg = 'Function' },
+        unstagedChangesColor = { fg = 'DiagnosticError' },
+        [241] = { fg = 'Special' },
       },
-      win = { style = "lazygit" }, -- Snacks window preset for LG
+      win = { style = 'lazygit' }, -- Snacks window preset for LG
     },
 
     -- Disable everything else
-    dashboard     = { enabled = false },
-    explorer      = { enabled = false },
+    dashboard = { enabled = false },
+    explorer = { enabled = false },
     picker = {
       enabled = true,
       -- optional: keep it light
-      sources = { "commands" }, -- or leave empty to allow all
+      sources = { 'commands' }, -- or leave empty to allow all
     },
-    notifier      = {
+    notifier = {
       enabled = true,
-      style = "fancy",                -- "fancy" | "compact" | "simple"
+      style = 'fancy', -- "fancy" | "compact" | "simple"
       timeout = 3000,
-      border = "rounded",
+      border = 'rounded',
       level = vim.log.levels.INFO,
       win_options = { winblend = 0 },
       -- proper icons table (no booleans)
       icons = {
-        info    = " ",
-        warn    = " ",
-        error   = " ",
-        debug   = " ",
-        trace   = "✎ ",
-        success = " ",
+        info = ' ',
+        warn = ' ',
+        error = ' ',
+        debug = ' ',
+        trace = '✎ ',
+        success = ' ',
       },
     },
-    search        = { enabled = false },
-    terminal      = { enabled = false },
-    quickfile     = { enabled = false },
-    scratch       = { enabled = false },
-    scroll        = { enabled = false },
+    search = { enabled = false },
+    terminal = { enabled = false },
+    quickfile = { enabled = false },
+    scratch = { enabled = false },
+    scroll = { enabled = false },
     statuscolumn = {
-      enabled = true,
-      folds = true,
-      git = true,
-      diagnostics = true,
-      separator = " ",
+      -- leave it empty for defaults OR customize:
+      left = { 'mark', 'sign' }, -- left-side components
+      right = { 'fold', 'git' }, -- right-side components
+      folds = {
+        open = true,
+        git_hl = true,
+      },
+      git = {
+        patterns = { 'GitSign', 'MiniDiffSign' },
+      },
+      refresh = 50, -- refresh rate
     },
     words = {
       enabled = true,
       debounce = 60,
-      hl = "LspReferenceText",  -- use your theme’s reference highlight
-      scope = { min_chars = 2 },-- ignore single letters
+      hl = 'LspReferenceText', -- use your theme’s reference highlight
+      scope = { min_chars = 2 }, -- ignore single letters
     },
-    indent        = { enabled = false },
-    scope         = { enabled = false },
-    layout        = { enabled = false },
-    image         = { enabled = false },
-    toggle        = { enabled = false },
+    indent = { enabled = false },
+    scope = { enabled = false },
+    layout = { enabled = false },
+    image = { enabled = false },
+    toggle = { enabled = false },
   },
   config = function(_, opts)
-    require("snacks").setup(opts)
+    require('snacks').setup(opts)
     -- Route all notifications through Snacks
-    local ok, notifier = pcall(require, "snacks.notifier")
+    local ok, notifier = pcall(require, 'snacks.notifier')
     if ok then
       vim.notify = notifier.notify
     end
 
     -- Command palette using Snacks picker
-    vim.keymap.set("n", "<leader><leader>", function()
-      require("snacks").picker.commands()
-    end, { desc = "Commands (Snacks)" })
+    vim.keymap.set('n', '<leader><leader>', function()
+      require('snacks').picker.commands()
+    end, { desc = 'Commands (Snacks)' })
   end,
 }
