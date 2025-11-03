@@ -14,10 +14,53 @@ return {
     vim.g.loaded_netrwPlugin = 1
   end,
   keys = {
-    { '\\',         ':Neotree reveal<CR>',     desc = 'NeoTree reveal',                silent = true }, -- Key mapping to reveal file in tree
-    { '<leader>ee', '<cmd>Neotree toggle<CR>', desc = 'Toggle NeoTree file explorer',  silent = true },
-    { '<leader>ef', '<cmd>Neotree focus<CR>',  desc = 'Focus NeoTree on current file', silent = true },
-    { '<leader>ec', '<cmd>Neotree close<CR>',  desc = 'Close NeoTree file explorer',   silent = true },
+    {
+      '\\',
+      function()
+        require('neo-tree.command').execute({
+          source = 'filesystem',
+          reveal = true,
+          reveal_force_cwd = true,
+          dir = vim.fn.expand('%:p:h'),
+        })
+      end,
+      desc = 'NeoTree reveal (root at file dir)',
+      silent = true,
+    },
+    {
+      '<leader>ee',
+      function()
+        require('neo-tree.command').execute({
+          source = 'filesystem',
+          toggle = true,
+          reveal = true,
+          reveal_force_cwd = true,
+          dir = vim.fn.expand('%:p:h'),
+        })
+      end,
+      desc = 'Toggle NeoTree (root at file dir)',
+      silent = true,
+    },
+    {
+      '<leader>ef',
+      function()
+        require('neo-tree.command').execute({
+          source = 'filesystem',
+          focus = true,
+          reveal = true,
+          reveal_force_cwd = true,
+          dir = vim.fn.expand('%:p:h'),
+        })
+      end,
+      desc = 'Focus NeoTree on current file (root at file dir)',
+      silent = true,
+    },
+    {
+      '<leader>ec',
+      ':Neotree close<CR>',
+      desc = 'Close NeoTree file explorer',
+      silent = true,
+    },
   },
   opts = {
     close_if_last_window = true,
@@ -26,12 +69,20 @@ return {
       auto_expand_width = true, -- adapts when you have long filenames
     },
     default_component_configs = {
-      name = { use_git_status_colors = true, trailing_slash = true },
+      name = {
+        use_git_status_colors = true,
+        trailing_slash = true,
+        highlight_opened_files = true,
+        display_path = "tail", -- show only folder name
+      },
       icon = { folder_closed = "", folder_open = "" },
     },
     filesystem = {
       hijack_netrw_behavior = "disabled",
-      follow_current_file = { enabled = true, leave_dirs_open = false },
+      follow_current_file = {
+        enabled = true,
+        leave_dirs_open = false,
+      },
       bind_to_cwd = true,
       use_libuv_file_watcher = true,  -- auto refresh on file changes
       group_empty_dirs = true,
@@ -41,6 +92,21 @@ return {
           ["r"] = "refresh",
           ["R"] = "refresh",
         },
+      },
+      components = {
+        name = function(config, node, state)
+          local comps = require("neo-tree.sources.common.components")
+          local name = comps.name(config, node, state)
+          if node:get_depth() == 1 then
+            local path = state.path or ""
+            if vim.fs and vim.fs.basename then
+              name.text = vim.fs.basename(path)
+            else
+              name.text = vim.fn.fnamemodify(path, ":t")
+            end
+          end
+          return name
+        end,
       },
       filtered_items = {
         visible = true,          -- Shows hidden files
