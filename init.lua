@@ -12,10 +12,11 @@ vim.g.maplocalleader = ' '
 vim.o.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions'
 
 -- Point Neovim to the provider Python explicitly
-vim.g.python3_host_prog = vim.fn.expand '~/.pyenv/versions/neovim3/bin/python'
+vim.g.python3_host_prog = vim.fn.expand '~/.local/share/mise/installs/python/3.14.2/bin/python'
+vim.g.ruby_host_prog = '~/.local/share/mise/installs/ruby/4.0.0/bin/ruby'
+
 -- If you don't need these, disable to silence health warnings:
 -- vim.g.loaded_node_provider  = 0
-vim.g.loaded_ruby_provider = 0
 vim.g.loaded_perl_provider = 0
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
@@ -912,4 +913,3 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
-
