@@ -1,6 +1,8 @@
 return {
   'nvim-telescope/telescope.nvim',
-  branch = '0.1.x', -- latest stable tag series for telescope
+  branch = 'master',
+  -- (optional but recommended to avoid lazy pinning tags)
+  version = false,
   dependencies = {
     'nvim-lua/plenary.nvim',
     { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
@@ -15,38 +17,38 @@ return {
     'TodoTelescope',
   },
   keys = function()
-    local b = require('telescope.builtin')
+    local b = require 'telescope.builtin'
     return {
-      { '<leader>ff', b.find_files,                 desc = 'Find files' },
-      { '<leader>fr', b.oldfiles,                   desc = 'Recent files' },
-      { '<leader>fs', b.live_grep,                  desc = 'Grep in cwd' },
-      { '<leader>fc', b.grep_string,                desc = 'Grep word under cursor' },
-      { '<leader>fh', b.help_tags,                  desc = 'Help tags' },
-      { '<leader>fb', b.buffers,                    desc = 'Buffers' },
-      { '<leader>ft', '<cmd>TodoTelescope<cr>',     desc = 'Find TODOs' },
-      { '<leader>s',  b.current_buffer_fuzzy_find,  desc = 'Search current buffer' },
+      { '<leader>ff', b.find_files, desc = 'Find files' },
+      { '<leader>fr', b.oldfiles, desc = 'Recent files' },
+      { '<leader>fs', b.live_grep, desc = 'Grep in cwd' },
+      { '<leader>fc', b.grep_string, desc = 'Grep word under cursor' },
+      { '<leader>fh', b.help_tags, desc = 'Help tags' },
+      { '<leader>fb', b.buffers, desc = 'Buffers' },
+      { '<leader>ft', '<cmd>TodoTelescope<cr>', desc = 'Find TODOs' },
+      { '<leader>s', b.current_buffer_fuzzy_find, desc = 'Search current buffer' },
     }
   end,
 
   config = function()
-    local telescope = require('telescope')
-    local actions = require('telescope.actions')
-    local layout_actions = require('telescope.actions.layout')
+    local telescope = require 'telescope'
+    local actions = require 'telescope.actions'
+    local layout_actions = require 'telescope.actions.layout'
     local transform_mod = require('telescope.actions.mt').transform_mod
     local trouble_ok, trouble_telescope = pcall(require, 'trouble.sources.telescope')
 
-    local custom_actions = transform_mod({
+    local custom_actions = transform_mod {
       open_trouble_qflist = function(prompt_bufnr)
         if trouble_ok then
-          require('trouble').toggle('quickfix')
+          require('trouble').toggle 'quickfix'
         else
           actions.send_to_qflist(prompt_bufnr)
-          vim.cmd('copen')
+          vim.cmd 'copen'
         end
       end,
-    })
+    }
 
-    telescope.setup({
+    telescope.setup {
       defaults = {
         prompt_prefix = '   ',
         selection_caret = '❯ ',
@@ -55,30 +57,56 @@ return {
         layout_strategy = 'flex',
         layout_config = {
           horizontal = { preview_width = 0.55 },
-          vertical   = { preview_height = 0.6 },
-          flex       = { flip_columns = 120 },
+          vertical = { preview_height = 0.6 },
+          flex = { flip_columns = 120 },
           prompt_position = 'top',
           width = 0.90,
           height = 0.85,
         },
         results_title = false,
-        borderchars = { "─","│","─","│","╭","╮","╯","╰" },
+        borderchars = { '─', '│', '─', '│', '╭', '╮', '╯', '╰' },
         preview = { timeout = 100 },
         path_display = { 'smart' },
         dynamic_preview_title = true,
         vimgrep_arguments = {
-          'rg', '--color=never', '--no-heading', '--with-filename', '--line-number', '--column',
-          '--smart-case', '--hidden', '--glob', '!.git/',
+          'rg',
+          '--color=never',
+          '--no-heading',
+          '--with-filename',
+          '--line-number',
+          '--column',
+          '--smart-case',
+          '--hidden',
+          '--glob',
+          '!.git/',
         },
         file_ignore_patterns = {
-          '^node_modules/', 'node_modules/',
-          '^dist/', 'dist/', '^build/', 'build/',
-          '^.git/', '.git/',
-          '^.next/', '^.cache/', '^target/',
-          '%.lock$', '%.sqlite3$', '%.ipynb$',
+          '^node_modules/',
+          'node_modules/',
+          '^dist/',
+          'dist/',
+          '^build/',
+          'build/',
+          '^.git/',
+          '.git/',
+          '^.next/',
+          '^.cache/',
+          '^target/',
+          '%.lock$',
+          '%.sqlite3$',
+          '%.ipynb$',
           '%.(jpg|jpeg|png|svg|webp|otf|ttf|ico|pdf|mp4|mkv)$',
           '%.(pdb|dll|class|exe|dylib|jar|7z|zip|tar|tar.gz|bz2)$',
-          '^smalljre_.*/', '^__pycache__/', '^env/', '^.venv/', '^gradle/', '^.gradle/', '^.idea/', '^.vscode/', '^.settings/', '^.vale/',
+          '^smalljre_.*/',
+          '^__pycache__/',
+          '^env/',
+          '^.venv/',
+          '^gradle/',
+          '^.gradle/',
+          '^.idea/',
+          '^.vscode/',
+          '^.settings/',
+          '^.vale/',
         },
         mappings = {
           i = {
@@ -113,7 +141,7 @@ return {
           ignore_current_buffer = true,
           mappings = {
             i = { ['<C-d>'] = actions.delete_buffer },
-            n = { ['dd']    = actions.delete_buffer },
+            n = { ['dd'] = actions.delete_buffer },
           },
         },
       },
@@ -126,15 +154,15 @@ return {
           case_mode = 'smart_case',
         },
         ['ui-select'] = {
-          require('telescope.themes').get_dropdown({
+          require('telescope.themes').get_dropdown {
             previewer = false,
             layout_config = { width = 0.5, height = 0.4 },
-          }),
+          },
         },
       },
-    })
+    }
 
-    telescope.load_extension('fzf')
+    telescope.load_extension 'fzf'
     pcall(telescope.load_extension, 'ui-select')
   end,
 }
