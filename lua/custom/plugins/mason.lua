@@ -25,6 +25,24 @@ return {
         end
       end
 
+      -- Python: quick actions (works best when ruff is attached)
+      local ft = vim.bo[bufnr].filetype
+      if ft == 'python' then
+        vim.keymap.set('n', '<leader>oi', function()
+          vim.lsp.buf.code_action {
+            apply = true,
+            context = { only = { 'source.organizeImports' } },
+          }
+        end, { buffer = bufnr, desc = 'Python: organize imports' })
+
+        vim.keymap.set('n', '<leader>of', function()
+          vim.lsp.buf.code_action {
+            apply = true,
+            context = { only = { 'source.fixAll' } },
+          }
+        end, { buffer = bufnr, desc = 'Python: fix all (ruff)' })
+      end
+
       -- If you prefer conform.nvim for on-save formatting, comment the block below
       -- if client.server_capabilities and client.server_capabilities.documentFormattingProvider then
       --   local grp = vim.api.nvim_create_augroup('LspFormatting_' .. bufnr, { clear = true })
@@ -61,6 +79,7 @@ return {
       'jsonls',
       'tailwindcss',
       'pyright',
+      'ruff',
       'bashls',
       'yamlls',
       'prismals',
@@ -189,7 +208,36 @@ return {
       cssls = {},
       html = {},
       jsonls = {},
-      pyright = {},
+
+      -- Python: types + completions (including auto-import completion edits)
+      pyright = {
+        settings = {
+          python = {
+            analysis = {
+              autoImportCompletions = true,
+              autoSearchPaths = true,
+              diagnosticMode = 'openFilesOnly',
+              useLibraryCodeForTypes = true,
+            },
+          },
+        },
+      },
+
+      -- Python: lint/format/organize imports via Ruff LSP (ruff server)
+      ruff = {
+        -- Prefer project root markers; otherwise fall back to cwd
+        root_dir = function(fname)
+          return util.root_pattern('pyproject.toml', 'ruff.toml', '.ruff.toml', 'setup.cfg', 'requirements.txt', '.git')(fname)
+            or vim.loop.cwd()
+        end,
+        init_options = {
+          settings = {
+            -- Keep defaults; you can override later in pyproject.toml
+            -- e.g. lineLength, lint settings, etc.
+          },
+        },
+      },
+
       bashls = {},
       prismals = {},
       sqls = {},
@@ -261,9 +309,7 @@ return {
         -- formatters / linters / extras only (avoid duplicating LSP servers)
         'prettier',
         'stylua',
-        'isort',
-        'black',
-        'pylint',
+        'ruff',
         'eslint_d',
         'shfmt',
         'shellcheck',
