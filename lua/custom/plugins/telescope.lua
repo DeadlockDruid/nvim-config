@@ -16,19 +16,17 @@ return {
     'Telescope',
     'TodoTelescope',
   },
-  keys = function()
-    local b = require 'telescope.builtin'
-    return {
-      { '<leader>ff', b.find_files, desc = 'Find files' },
-      { '<leader>fr', b.oldfiles, desc = 'Recent files' },
-      { '<leader>fs', b.live_grep, desc = 'Grep in cwd' },
-      { '<leader>fc', b.grep_string, desc = 'Grep word under cursor' },
-      { '<leader>fh', b.help_tags, desc = 'Help tags' },
-      { '<leader>fb', b.buffers, desc = 'Buffers' },
-      { '<leader>ft', '<cmd>TodoTelescope<cr>', desc = 'Find TODOs' },
-      { '<leader>s', b.current_buffer_fuzzy_find, desc = 'Search current buffer' },
-    }
-  end,
+  -- AFTER
+  keys = {
+    { '<leader>ff', function() require('telescope.builtin').find_files() end,                desc = 'Find files' },
+    { '<leader>fr', function() require('telescope.builtin').oldfiles() end,                  desc = 'Recent files' },
+    { '<leader>fs', function() require('telescope.builtin').live_grep() end,                 desc = 'Grep in cwd' },
+    { '<leader>fc', function() require('telescope.builtin').grep_string() end,               desc = 'Grep word under cursor' },
+    { '<leader>fh', function() require('telescope.builtin').help_tags() end,                 desc = 'Help tags' },
+    { '<leader>fb', function() require('telescope.builtin').buffers() end,                   desc = 'Buffers' },
+    { '<leader>ft', '<cmd>TodoTelescope<cr>',                                                desc = 'Find TODOs' },
+    { '<leader>s',  function() require('telescope.builtin').current_buffer_fuzzy_find() end, desc = 'Search current buffer' },
+  },
 
   config = function()
     local telescope = require 'telescope'

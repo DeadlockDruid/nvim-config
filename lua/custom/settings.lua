@@ -3,7 +3,6 @@ local o = vim.opt
 
 -- Editor options
 
-o.syntax = 'on' -- When this option is set, the syntax with this name is loaded.
 o.autoindent = true -- Copy indent from current line when starting a new line.
 o.expandtab = true -- In Insert mode: Use the appropriate number of spaces to insert a <Tab>.
 o.shiftwidth = 2 -- Number of spaces to use for each step of (auto)indent.

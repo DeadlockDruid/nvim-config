@@ -24,7 +24,7 @@ return {
         python = { 'isort', 'black' }, -- Sequential formatting for Python
       },
       format_on_save = {
-        lsp_fallback = true,
+        lsp_format = "fallback",
         async = false,
         timeout_ms = 1000,
       },

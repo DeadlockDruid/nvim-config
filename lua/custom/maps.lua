@@ -16,12 +16,6 @@ map('i', 'jk', '<ESC>')
 map('n', '<leader>o', '<CMD>vsplit<CR>')
 map('n', '<leader>p', '<CMD>split<CR>')
 
--- Window Navigation
-map('n', '<C-h>', '<C-w>h')
-map('n', '<C-l>', '<C-w>l')
-map('n', '<C-k>', '<C-w>k')
-map('n', '<C-j>', '<C-w>j')
-
 -- Resize Windows
 map('n', '<C-Left>', '<C-w><')
 map('n', '<C-Right>', '<C-w>>')
@@ -128,7 +122,8 @@ vim.keymap.set('n', '<leader>mr', '<cmd>CellularAutomaton make_it_rain<CR>')
 -- Usage:
 -- - Open a configuration file (e.g., init.lua or any plugin-specific Lua file).
 -- - Make changes to the file.
--- - Press <leader><leader> to reload the configuration and apply changes immediately.
-vim.keymap.set('n', '<leader><leader>', function()
-  vim.cmd 'so'
-end)
+-- - Press <leader>vs to reload the configuration and apply changes immediately.
+vim.keymap.set('n', '<leader>vs', function()
+  vim.cmd 'source %'
+  vim.notify('Reloaded ' .. vim.fn.expand '%', vim.log.levels.INFO)
+end, { silent = true, desc = 'Reload current file' })

@@ -20,11 +20,9 @@ return {
         require('neo-tree.command').execute {
           source = 'filesystem',
           reveal = true,
-          reveal_force_cwd = true,
-          dir = vim.fn.expand '%:p:h',
         }
       end,
-      desc = 'NeoTree reveal (root at file dir)',
+      desc = 'Reveal current file in NeoTree',
       silent = true,
     },
     {
@@ -33,12 +31,9 @@ return {
         require('neo-tree.command').execute {
           source = 'filesystem',
           toggle = true,
-          reveal = true,
-          reveal_force_cwd = true,
-          dir = vim.fn.expand '%:p:h',
         }
       end,
-      desc = 'Toggle NeoTree (root at file dir)',
+      desc = 'Toggle NeoTree',
       silent = true,
     },
     {
@@ -48,16 +43,14 @@ return {
           source = 'filesystem',
           focus = true,
           reveal = true,
-          reveal_force_cwd = true,
-          dir = vim.fn.expand '%:p:h',
         }
       end,
-      desc = 'Focus NeoTree on current file (root at file dir)',
+      desc = 'Focus NeoTree on current file',
       silent = true,
     },
     {
       '<leader>ec',
-      ':Neotree close<CR>',
+      '<cmd>Neotree close<cr>',
       desc = 'Close NeoTree file explorer',
       silent = true,
     },
@@ -65,8 +58,8 @@ return {
   opts = {
     close_if_last_window = true,
     window = {
-      width = 33,
-      auto_expand_width = true, -- adapts when you have long filenames
+      width = 36,
+      auto_expand_width = false, -- adapts when you have long filenames
     },
     default_component_configs = {
       name = {
@@ -79,11 +72,13 @@ return {
     },
     filesystem = {
       hijack_netrw_behavior = 'disabled',
-      follow_current_file = {
-        enabled = true,
-        leave_dirs_open = false,
+      filesystem = {
+        follow_current_file = {
+          enabled = true,
+          leave_dirs_open = true,
+        },
+        bind_to_cwd = false,
       },
-      bind_to_cwd = true,
       use_libuv_file_watcher = true, -- auto refresh on file changes
       group_empty_dirs = true,
       window = {
@@ -92,21 +87,6 @@ return {
           ['r'] = 'rename',
           ['R'] = 'refresh',
         },
-      },
-      components = {
-        name = function(config, node, state)
-          local comps = require 'neo-tree.sources.common.components'
-          local name = comps.name(config, node, state)
-          if node:get_depth() == 1 then
-            local path = state.path or ''
-            if vim.fs and vim.fs.basename then
-              name.text = vim.fs.basename(path)
-            else
-              name.text = vim.fn.fnamemodify(path, ':t')
-            end
-          end
-          return name
-        end,
       },
       filtered_items = {
         visible = true, -- Shows hidden files

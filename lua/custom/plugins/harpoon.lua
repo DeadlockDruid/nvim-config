@@ -3,33 +3,25 @@ return {
   branch = 'harpoon2',
   dependencies = { 'nvim-lua/plenary.nvim' },
 
-  -- Lazy-load on first key use
   keys = {
-    { '<leader>a', function() require('harpoon'):list():add() end,                   desc = 'Harpoon: Add' },
-    { '<leader>H', '<cmd>HarpoonPicker<CR>', desc = 'Harpoon (Telescope)' },
-    { '<leader>1', function() require('harpoon'):list():select(1) end },
-    { '<leader>2', function() require('harpoon'):list():select(2) end },
-    { '<leader>3', function() require('harpoon'):list():select(3) end },
-    { '<leader>4', function() require('harpoon'):list():select(4) end },
-    { '<leader>Fp', function() require('harpoon'):list():prev() end,  desc = 'Harpoon: Previous' },
-    { '<leader>Fn', function() require('harpoon'):list():next() end,  desc = 'Harpoon: Next' },
+    { '<leader>a',  function() require('harpoon'):list():add() end,            desc = 'Harpoon: Add' },
+    { '<leader>hm', function()
+        local h = require('harpoon')
+        h.ui:toggle_quick_menu(h:list())
+      end,                                                                      desc = 'Harpoon: Menu' },
+    { '<leader>H',  '<cmd>HarpoonPicker<CR>',                                  desc = 'Harpoon: Telescope picker' },
+    { '<leader>1',  function() require('harpoon'):list():select(1) end,        desc = 'Harpoon: File 1' },
+    { '<leader>2',  function() require('harpoon'):list():select(2) end,        desc = 'Harpoon: File 2' },
+    { '<leader>3',  function() require('harpoon'):list():select(3) end,        desc = 'Harpoon: File 3' },
+    { '<leader>4',  function() require('harpoon'):list():select(4) end,        desc = 'Harpoon: File 4' },
+    { '[h',         function() require('harpoon'):list():prev() end,           desc = 'Harpoon: Previous' },
+    { ']h',         function() require('harpoon'):list():next() end,           desc = 'Harpoon: Next' },
   },
 
   config = function()
     require('harpoon'):setup()
 
-    -- Back-compat shim for older mappings that call:
-    --   require('custom.plugins.harpoon')._toggle_picker()
-    do
-      local mod = package.loaded['custom.plugins.harpoon'] or {}
-      function mod._toggle_picker()
-        vim.cmd('HarpoonPicker')
-      end
-      package.loaded['custom.plugins.harpoon'] = mod
-    end
-
-    -- Define a user command so keymaps don't need to require this file as a module
-    vim.api.nvim_create_user_command("HarpoonPicker", function()
+    vim.api.nvim_create_user_command('HarpoonPicker', function()
       local ok_find, finders    = pcall(require, 'telescope.finders')
       local ok_pick, pickers    = pcall(require, 'telescope.pickers')
       local ok_conf, conf_mod   = pcall(require, 'telescope.config')
@@ -54,7 +46,7 @@ return {
       pickers.new({}, {
         prompt_title = 'Harpoon',
         finder = make_finder(),
-        previewer = previewers.vim_buffer_cat.new({}),  -- buffer-based previewer avoids termopen issues
+        previewer = previewers.vim_buffer_cat.new({}),
         sorter = conf_mod.values.generic_sorter({}),
         layout_strategy = 'center',
         layout_config = {
@@ -73,8 +65,7 @@ return {
             local picker = actions_state.get_current_picker(prompt_bufnr)
             local row = picker:get_selection_row()
             if row and row >= 1 and row <= #list.items then
-              list:remove(row) -- Harpoon v2 expects an index
-              -- refresh list & finder without closing the picker
+              list:remove(row)
               items = {}
               for _, it in ipairs(list.items) do table.insert(items, it.value) end
               picker:refresh(make_finder(), { reset_prompt = false })

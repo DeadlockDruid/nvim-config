@@ -14,7 +14,7 @@ return {
       diagnostics_update_in_insert = false,
       offsets = {
         {
-          filetype = "NvimTree",
+          filetype = "neo-tree",
           text = "File Explorer",
           highlight = "Directory",
           text_align = "left",

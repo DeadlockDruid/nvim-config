@@ -228,7 +228,7 @@ return {
         -- Prefer project root markers; otherwise fall back to cwd
         root_dir = function(fname)
           return util.root_pattern('pyproject.toml', 'ruff.toml', '.ruff.toml', 'setup.cfg', 'requirements.txt', '.git')(fname)
-            or vim.loop.cwd()
+            or (vim.uv or vim.loop).cwd()
         end,
         init_options = {
           settings = {
@@ -282,7 +282,6 @@ return {
 
     -- Hard-disable default ts servers; we'll let Node projects re-enable explicitly if needed
     pcall(vim.lsp.disable, 'ts_ls')
-    pcall(vim.lsp.disable, 'vtsls')
 
     -- If any ts server still attaches in a Deno project, stop it so denols owns the buffer
     vim.api.nvim_create_autocmd('LspAttach', {
