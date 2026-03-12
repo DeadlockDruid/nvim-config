@@ -36,7 +36,8 @@
 | `gv` | Re-select last visual selection |
 | `.` | Repeat last change |
 | `q{r}` / `@{r}` | Record / replay macro in register `r` |
-
+| `>` (visual) | Indent selection — stays selected |
+| `<` (visual) | Unindent selection — stays selected |
 ---
 
 ## Saving & Quitting

@@ -127,3 +127,10 @@ vim.keymap.set('n', '<leader>vs', function()
   vim.cmd 'source %'
   vim.notify('Reloaded ' .. vim.fn.expand '%', vim.log.levels.INFO)
 end, { silent = true, desc = 'Reload current file' })
+
+
+-- `gv` re-selects the last visual selection immediately after the indent. 
+-- You can now hammer `>` repeatedly to keep indenting without ever losing 
+-- the selection.
+vim.keymap.set('v', '>', '>gv', { desc = 'Indent and reselect' })
+vim.keymap.set('v', '<', '<gv', { desc = 'Unindent and reselect' })
