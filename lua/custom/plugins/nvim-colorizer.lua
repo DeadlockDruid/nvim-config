@@ -14,8 +14,11 @@ return {
       hsl_fn = true,
       css = true,
       css_fn = true,
-      tailwind = 'lsp',
-      mode = 'background', -- or "virtualtext"
+
+      -- key fix: stop using colorizer's Tailwind LSP path
+      tailwind = true,
+
+      mode = 'background',
       virtualtext = '■',
       always_update = false,
       sass = { enable = true, parsers = { 'css' } },
@@ -24,13 +27,24 @@ return {
   config = function(_, opts)
     require('colorizer').setup(opts)
 
-    -- Big-file guard: detach colorizer for files > 500KB
     local MAX = 500 * 1024
     vim.api.nvim_create_autocmd('BufReadPost', {
       callback = function(args)
-        local ok, stat = pcall((vim.uv or vim.loop).fs_stat, args.file)
-        if ok and stat and stat.size and stat.size > MAX then
-          pcall(require('colorizer').detach_from_buffer, args.buf)
+        local path = vim.api.nvim_buf_get_name(args.buf)
+        if path == '' then
+          return
+        end
+
+        local ok, stat = pcall((vim.uv or vim.loop).fs_stat, path)
+        if not ok or not stat or not stat.size then
+          return
+        end
+
+        if stat.size > MAX then
+          pcall(function()
+            require('colorizer').detach_from_buffer(args.buf)
+          end)
+
           vim.schedule(function()
             vim.notify('Colorizer disabled for large file (>500KB)', vim.log.levels.INFO)
           end)
